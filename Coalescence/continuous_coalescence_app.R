@@ -140,12 +140,17 @@ plot_coal <- function(tree){
   
   mny <- -max(tree$branch_lengths)*.04
   
-  par(mar=c(0, 0, 0, 0))
+  par(las = 1)
+  par(mar=c(0, 4, 1, 0))
   par(mfrow=c(2,1))
+  
   #my_asp <- 2
   plot(NA, NA, xlim=c(1, max(tree$nod_pos)), 
        ylim = c(mny, max(tree$branch_lengths)),
        axes = F, xlab = "", ylab = "")
+  axis(side = 2)
+  mtext(text = "T", side = 2, line = 3, las = 1)
+  abline(h = unique(tree$branch_lengths), lty = 2, col = "grey", lwd = 0.25)
   
   #rect(xleft = 1*buff, ybottom = mny*(buff+1), 
   #     xright = max(tree$nod_pos)*(buff+1), ytop = max(tree$branch_lengths)*(buff+1),
@@ -182,9 +187,14 @@ plot_coal <- function(tree){
   
   
   mx_nodes <- length(tree$branch_lengths)
-  text(tree$nod_pos[mx_nodes] * 0.85, tree$branch_lengths[mx_nodes], 
-       paste0("T = ",round(tree$branch_lengths[mx_nodes],2)))
-  #points(tree$nod_pos[mx_nodes], tree$branch_lengths[mx_nodes], pch = 19)
+  dispnodes<-seq((mx_nodes-tree$n_pop)+1, mx_nodes)
+  
+  text(tree$nod_pos[dispnodes] * 0.85, tree$branch_lengths[dispnodes], 
+       paste0("T = ",round(tree$branch_lengths[dispnodes],digits = 3 )))
+  
+  points(tree$nod_pos[mx_nodes], tree$branch_lengths[mx_nodes], pch = 19)
+  points(tree$nod_pos[mx_nodes], tree$branch_lengths[mx_nodes], pch = 19)
+  
 }
 
 ###################
@@ -274,7 +284,7 @@ plot_aln <- function(tree, aln){
   
   if(!is.null(sz)){
     if(sz[2] > 0){
-      par(mar=c(0, 0, 0, 0))
+      #par(mar=c(0, 0, 0, 0))
       plot(NA, NA, xlim = c(-marg, sz[1]+marg), ylim = c(sz[2], 0),
            axes = F, xlab = "", ylab = "")
       
@@ -299,56 +309,61 @@ plot_aln <- function(tree, aln){
 cwd <- 2
 # Define UI for application that draws a histogram
 ui <- fluidPage(
-   
-   # Application title
-   titlePanel("Continuous time coalescence"),
-   
-   # Sidebar with a slider input for number of bins 
-   sidebarLayout(
-      sidebarPanel(
-        
-         sliderInput("n", "number of samples",
-                     min = 2, max = 50,
-                     value = 8, step = 1),
-         
-         sliderInput("theta", label = HTML("&theta;"),
-                     min = 0, max = 5,
-                     value = 2, step = 0.05),
   
-     
-            isolate(checkboxInput(inputId = "tree",
-                                  label = strong("Show geneology"), 
-                                  value = TRUE)),
-     
- 
-            isolate(checkboxInput(inputId = "mutations",
-                                  label = strong("Show mutations"),
-                                  value = TRUE)),
-     
+  # Application title
+  titlePanel("Continuous time coalescence"),
   
-            isolate(checkboxInput(inputId = "aln",
-                                  label = strong("Show alignment"),
-                                  value = TRUE)),
-     
-         actionButton("goButton", "GO")
-         
-      ),
+  # Sidebar with a slider input for number of bins 
+  sidebarLayout(
+    sidebarPanel(
       
-      # Show a plot of the generated distribution
-      mainPanel(
-        
-          column(11, align="center",
-                 plotOutput("distPlot")
-
+      sliderInput("n", "Number of samples",
+                  min = 2, max = 50,
+                  value = 8, step = 1),
+      
+      sliderInput("theta", label = HTML("&theta;"),
+                  min = 0, max = 5,
+                  value = 2, step = 0.05),
+      
+      
+      isolate(checkboxInput(inputId = "tree",
+                            label = strong("Show geneology"), 
+                            value = TRUE)),
+      
+      
+      isolate(checkboxInput(inputId = "mutations",
+                            label = strong("Show mutations"),
+                            value = TRUE)),
+      
+      
+      isolate(checkboxInput(inputId = "aln",
+                            label = strong("Show alignment"),
+                            value = TRUE)),
+      
+      actionButton("goButton", "GO"),
+      
+      helpText(
+        a("More apps and source code", 
+          target="_blank", cex = 0.5,href="https://github.com/silastittes/shiny_popgen"
         )
+      )
+    ),
+    
+    mainPanel(
+      
+      column(11, align="center",
+             plotOutput("distPlot")
+             
+             
       )
     )
   )
+)
 
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-   
+  
   
   #each time user hits "go"
   rand <- eventReactive(input$goButton, {
@@ -358,29 +373,29 @@ server <- function(input, output) {
   })
   
   
-   output$distPlot <- renderPlot({
-     
-     data_out <- rand()
-     
-     par(mfrow=c(2,1))
-     
-     if(input$tree){
-        plot_coal(data_out$tree)
-      }
-      
-     
-      if(input$mutations){
-        aln <- paint_mutants(data_out$tree, data_out$theta, viz = T)
-      } else {
-        aln <- paint_mutants(data_out$tree, data_out$theta, viz = F)
-      }
-     
-      
-      if(input$aln){
+  output$distPlot <- renderPlot({
+    
+    data_out <- rand()
+    
+    par(mfrow=c(2,1))
+    
+    if(input$tree){
+      plot_coal(data_out$tree)
+    }
+    
+    
+    if(input$mutations){
+      aln <- paint_mutants(data_out$tree, data_out$theta, viz = T)
+    } else {
+      aln <- paint_mutants(data_out$tree, data_out$theta, viz = F)
+    }
+    
+    
+    if(input$aln){
       plot_aln(data_out$tree, aln)
-      }
-      
-   })
+    }
+    
+  })
 }
 
 # Run the application 
